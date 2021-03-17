@@ -1,0 +1,117 @@
+version: '3.8'
+
+networks:
+  app:
+    name: app
+
+services:
+  nginx:
+    build:
+      context: ./docker/nginx
+      dockerfile: nginx.prod.dockerfile
+      args:
+        DOMAIN_NAME: "dockerenvironment.crmsolucoes.com.br"
+    container_name: nginx
+    restart: unless-stopped
+    depends_on:
+      - php
+      - redis
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - ./:/var/www/html
+    networks:
+      - app
+
+  php:
+    build:
+      context: ./docker/php
+      dockerfile: php.prod.dockerfile
+    container_name: php
+    restart: unless-stopped
+    volumes:
+      - ./:/var/www/html
+    networks:
+      - app
+
+  composer:
+    image: composer:latest
+    container_name: composer
+    volumes:
+      - ./:/var/www/html
+    working_dir: /var/www/html
+    networks:
+      - app
+
+  artisan:
+    build:
+      context: ./docker/php
+      dockerfile: php.prod.dockerfile
+    container_name: artisan
+    volumes:
+      - ./:/var/www/html
+    working_dir: /var/www/html
+    entrypoint: ["php", "artisan"]
+    networks:
+      - app
+
+  npm:
+    image: node:13.7
+    container_name: npm
+    volumes: 
+      - ./:/var/www/html
+    working_dir: /var/www/html
+    entrypoint: ["npm"]
+    networks:
+      - app
+
+  redis:
+    image: redis:latest
+    container_name: redis
+    restart: unless-stopped
+    ports:
+      - 6379:6379
+    networks:
+      - app
+
+  scheduler:
+    build:
+      context: ./docker/php
+      dockerfile: php.prod.dockerfile
+    container_name: scheduler
+    volumes:
+      - ./:/var/www/html
+    working_dir: /var/www/html
+    entrypoint: ["php", "artisan", "schedule:work"]
+    networks:
+      - app
+
+  horizon:
+    build:
+      context: ./docker/php
+      dockerfile: php.prod.dockerfile
+    container_name: horizon
+    volumes:
+      - ./:/var/www/html
+    working_dir: /var/www/html
+    entrypoint: ["php", "artisan", "horizon"]
+    networks:
+      - app
+
+  laravel-echo-server:
+    image: oanhnn/laravel-echo-server:3.1
+    container_name: laravel-echo-server
+    restart: unless-stopped
+    depends_on:
+      - redis
+    ports:
+      - 6001:6001
+    environment:
+      LARAVEL_ECHO_SERVER_AUTH_HOST: ${APP_URL}
+      LARAVEL_ECHO_SERVER_DB: redis
+      LARAVEL_ECHO_SERVER_REDIS_HOST: redis
+      LARAVEL_ECHO_SERVER_REDIS_PORT: 6379
+      LARAVEL_ECHO_SERVER_REDIS_PASSWORD:
+    networks:
+      - app
