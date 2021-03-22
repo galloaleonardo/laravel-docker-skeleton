@@ -10,7 +10,7 @@ services:
       context: ./docker/nginx
       dockerfile: nginx.prod.dockerfile
       args:
-        DOMAIN_NAME: "dockerenvironment.crmsolucoes.com.br"
+        DOMAIN_NAME: "laravel-docker-skeleton.com.br"
     container_name: nginx
     restart: unless-stopped
     depends_on:
