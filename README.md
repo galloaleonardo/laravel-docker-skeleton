@@ -8,7 +8,7 @@
 
 ##### Services
 
-- Nginx + Redis
+- Nginx + PHP + Redis
 ```bash
 docker-compose up -d nginx
 ```
